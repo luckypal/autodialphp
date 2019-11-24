@@ -13,6 +13,57 @@ $database = new Medoo([
   'password' => ''
 ]);
 
+$route = isset($_GET["route"]) ? $_GET["route"] : "";
+
+if ($route == "autodial") {
+  $caller_id = $_POST["caller_id"];
+
+  if ($caller_id) {
+    $offset = 0;
+    $tick = 0;
+    $offset_time = date('Y-m-d H:i:s', time() + $offset);
+    //echo "Строка #<b>{$line_num}</b> : " . htmlspecialchars($line) . "<br />\n";
+
+
+    $number = $request->caller_id;
+
+    $cid = '';
+    $amount_done = 0;
+    $amount_planned = 1;
+    $context = $_POST['ivr_list'];
+    $last_call = date("Y-m-d H:i:s", strtotime($offset_time));
+
+    $database->exec("INSERT INTO call_settings (number, cid, amount_done, amount_planned, context, last_call) 
+                      VALUES (`$number`, `$cid`, `$amount_done`, `$amount_planned`, `$context`, `$last_call`)");
+
+    $_SESSION["success"] = 'Call in progress , try and retrieve after this closes';
+  }
+  header("location: index.php");
+  return;
+}
+
+if ($route == "retrieveinfo") {
+  $contents = "--";
+  $filename = $_POST ["filename"];
+
+  //$file = '/root/info-' . $request -> filename . '.txt';
+  $file = __DIR__.'/call_files/info-' . $filename . '.txt';
+  clearstatcache();
+
+  if (file_exists($file) == false) {
+    $contents = "<span style='color:red'>They did not answer or give it.. better luck next time</span>"; // . $file;
+  } else {
+    $contents = file_get_contents($file);
+    //$contents = str_replace(chr(13), '<br />', $contents);
+    $contents = nl2br($contents, false);
+
+    $user_id = 29;
+    $number = $filename;
+    $result = $contents;
+  }
+  echo json_encode(array('contents' => $contents));
+  return;
+}
 
 
 //autodial
@@ -205,17 +256,17 @@ body {
 
 
               <?php if (isset($_SESSION['status']) && $_SESSION['status']) { ?>
-              <div class="alert alert-success"> <?=$_SESSION['status']?> </div>
+                <div class="alert alert-success"> <?= $_SESSION['status'] ?> </div>
               <?php } ?>
 
               <?php if (isset($_SESSION['success']) && $_SESSION['success']) { ?>
-              <div class="alert alert-success">
-              <?=$_SESSION['success']?>
+                <div class="alert alert-success">
+                  <?= $_SESSION['success'] ?>
 
-              </div>
+                </div>
               <?php } ?>
 
-              <form method="POST" action="http://localhost:8000/autodial" accept-charset="UTF-8"><input name="_token" type="hidden" value="3J9zOySWahzd1xtTb4hflh3ekbTxvqX7tIquGSGr">
+              <form method="POST" action="index.php?route=autodial" accept-charset="UTF-8"><input name="_token" type="hidden" value="3J9zOySWahzd1xtTb4hflh3ekbTxvqX7tIquGSGr">
                 <input type="hidden" name="_token" value="3J9zOySWahzd1xtTb4hflh3ekbTxvqX7tIquGSGr">
                 <div class="col-md-4">
 
@@ -310,7 +361,7 @@ body {
     <script>
       let timerInterval
       Swal.fire({
-        title: '$_SESSION["success"]',
+        title: '<?=$_SESSION["success"]?>',
         timer: 7000,
         onBeforeOpen: () => {
           Swal.showLoading()
@@ -337,3 +388,8 @@ body {
 </body>
 
 </html>
+
+<?php 
+$_SESSION ["status"] = false;
+$_SESSION ["success"] = false;
+?>
