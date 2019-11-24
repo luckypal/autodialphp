@@ -333,6 +333,17 @@ class Medoo
 		return $this->exec($query, $map);
 	}
 
+	public function queryAll($query, $map = [])
+	{
+		$raw = $this->raw($query, $map);
+
+		$query = $this->buildRaw($raw, $map);
+
+		$result = $this->exec($query, $map);
+		
+		return $result->fetchAll(PDO::FETCH_ASSOC);
+	}
+
 	public function exec($query, $map = [])
 	{
 		if ($this->debug_mode)
